@@ -105,6 +105,7 @@ class SudokuGenerator:
         attempts = 0
         best_attempt_redaction_count = 0
         best_attempt = grid.copy()
+        print("Requested difficulty level: ", difficulty)
         # Try to redact the sudoku puzzle until a unique solution is found.
         while not successfull_redactions:
             redacted_grid = grid.copy()
@@ -126,11 +127,6 @@ class SudokuGenerator:
                         if redacted_cells >= best_attempt_redaction_count:
                             best_attempt_redaction_count = redacted_cells
                             best_attempt = redacted_grid.copy()
-                        print("No unique solution found at difficulty level: ", difficulty)
-                        print("Calculated difficulty level: ", round((total_cells - redacted_cells) / total_cells, 2))
-                        print("Number of redacted numbers: ", redacted_cells)
-                        print("Requested number of redacted numbers: ", (total_cells - cells_to_keep))
-                        print("Failed to redact the sudoku puzzle after ", attempts, " attempts.\n")
                         break
                     continue
                 checked_locations.append((i, j))
@@ -148,6 +144,10 @@ class SudokuGenerator:
             if attempts > 10000:
                 break
         
+        # Print info about attempts and the best attempt.
+        print("Number of redacted numbers: ", best_attempt_redaction_count)
+        print("Requested number of redacted numbers: ", (total_cells - cells_to_keep))
+        print("Number of attempts: ", attempts)
         return best_attempt   
 
     def print_sudoku(self, grid):

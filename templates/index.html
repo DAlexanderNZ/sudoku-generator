@@ -57,6 +57,9 @@
       .sudoku-cell.provided {
         background-color: #2d3848;
         color: #cccccc;
+        user-select: none;
+        -webkit-user-select: none;
+        cursor: default;
       }
 
       .sudoku-cell:nth-child(3n) {
@@ -67,14 +70,6 @@
         border-bottom: 2px solid black;
       }
 
-    /* Prevent selection on provided cells */
-      .sudoku-cell.provided {
-        user-select: none;
-        -webkit-user-select: none;
-        cursor: default;
-      }
-
-    /* Dark mode focus styling */
       .sudoku-cell:focus {
         outline: 2px solid #4a90e2;
         outline-offset: -2px;
