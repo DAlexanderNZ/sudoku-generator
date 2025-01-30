@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Sudoku</title>
+    <style>
+      body {
+        background-color: #2d3848;
+        color: #ffffff;
+      }
+
+      button {
+        background-color: #4a5568;
+        color: #ffffff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #5a677a;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        text-align: center;
+        background-color: #3a4555;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .controls {
+        margin: 20px 0;
+      }
+
+      .sudoku-grid {
+        display: grid;
+        grid-template-columns: repeat(9, 50px);
+        gap: 0;
+        border: 2px solid black;
+        margin: 20px auto;
+      }
+
+      .sudoku-cell {
+        width: 50px;
+        height: 50px;
+        text-align: center;
+        border: 1px solid #ccc;
+        font-size: 24px;
+        box-sizing: border-box;
+        background-color: #475467;
+        color: #ffffff;
+        border-color: #1e252e;
+      }
+
+      .sudoku-cell.provided {
+        background-color: #2d3848;
+        color: #cccccc;
+      }
+
+      .sudoku-cell:nth-child(3n) {
+        border-right: 2px solid black;
+      }
+
+      .sudoku-row:nth-child(3n) .sudoku-cell {
+        border-bottom: 2px solid black;
+      }
+
+    /* Prevent selection on provided cells */
+      .sudoku-cell.provided {
+        user-select: none;
+        -webkit-user-select: none;
+        cursor: default;
+      }
+
+    /* Dark mode focus styling */
+      .sudoku-cell:focus {
+        outline: 2px solid #4a90e2;
+        outline-offset: -2px;
+      }
+
+      input:invalid {
+        background-color: #ffe6e6;
+      }
+
+      input.correct {
+        background-color: #2d7a4d;
+      }
+
+      .error {
+        background-color: #ff6666;
+      }
+
+      .controls button {
+        margin: 0 10px;
+        padding: 8px 16px;
+        font-size: 16px;
+      }
+
+      .difficulty-container {
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Sudoku</h1>
+      <div class="controls">
+        <div class="difficulty-container">
+          <label for="difficulty-slider">Difficulty:</label>
+          <input
+            type="range"
+            id="difficulty-slider"
+            min="0.1"
+            max="1"
+            step="0.1"
+            value="0.5"
+          />
+          <span id="difficulty-value">0.5</span>
+        </div>
+        <button id="new-puzzle-btn">New Puzzle</button>
+        <button id="check-solution-btn">Check Solution</button>
+        <button id="clear-btn">Clear Board</button>
+        <button id="reset-btn">Reset Highlighing</button>
+      </div>
+      <div id="sudoku-grid" class="sudoku-grid"></div>
+    </div>
+
+    <script>
+      let currentSolution = null;
+
+      function fetchNewPuzzle(difficulty) {
+        fetch(`/api/new_puzzle?difficulty=${difficulty}`)
+          .then((response) => response.json())
+          .then((data) => {
+            currentSolution = data.solution
+            renderBoard(data.board)
+          });
+      }
+
+      function renderBoard(board) {
+        const grid = document.getElementById("sudoku-grid")
+        grid.innerHTML = ""
+
+        for (let i = 0; i < 9; i++) {
+          for (let j = 0; j < 9; j++) {
+            const cell = document.createElement("input")
+            cell.className = "sudoku-cell"
+            cell.type = "text"
+            cell.inputMode = "numeric"
+            cell.maxLength = 1
+            cell.dataset.row = i
+            cell.dataset.col = j
+
+            if (board[i][j] !== 0) {
+                  cell.value = board[i][j];
+                  cell.readOnly = true;
+                  cell.classList.add('provided');
+                  cell.tabIndex = -1;  // Prevent keyboard focus
+              } else {
+                  cell.addEventListener('input', function (e) {
+                      this.value = this.value.replace(/[^1-9]/g, '');
+                  })
+                  cell.tabIndex = 0;  // Make editable cells focusable
+              }
+
+            // Add thick borders for 3x3 blocks
+            if (j % 3 === 2 && j !== 8)
+              cell.style.borderRight = "2px solid black"
+            if (i % 3 === 2 && i !== 8)
+              cell.style.borderBottom = "2px solid black"
+
+            grid.appendChild(cell);
+          }
+        }
+      }
+
+      function checkSolution() {
+        const cells = document.querySelectorAll('.sudoku-cell')
+        let isComplete = true
+        let isCorrect = true
+
+        cells.forEach((cell, index) => {
+            cell.classList.remove('error', 'correct')
+            const row = Math.floor(index / 9)
+            const col = index % 9
+            const value = parseInt(cell.value) || 0
+
+            if (value === 0) {
+                isComplete = false
+            } else {
+                if (value === currentSolution[row][col]) {
+                    cell.classList.add('correct')
+                } else {
+                    cell.classList.add('error')
+                    isCorrect = false
+                }
+            }
+        });
+
+          if (!isComplete) {
+              alert('Puzzle is not complete!')
+          } else if (isCorrect) {
+              alert('Congratulations! Solution is correct!')
+          } else {
+              alert('Solution contains errors. Please check highlighted cells.')
+          }
+      }
+      
+      function resetBoard() {
+        const cells = document.querySelectorAll(".sudoku-cell")
+        cells.forEach((cell) => {
+        cell.classList.remove("error", "correct")
+        })
+      }
+
+      function clearBoard() {
+        const cells = document.querySelectorAll('.sudoku-cell')
+        cells.forEach((cell) => {
+          if (!cell.classList.contains('provided')) {
+            cell.value = ''
+          }
+        })
+        resetBoard()
+      }
+
+      
+      // Event Listeners
+      document.getElementById("new-puzzle-btn").addEventListener("click", () => {
+          const difficulty = document.getElementById("difficulty-slider").value
+          fetchNewPuzzle(difficulty)
+        })
+        
+        document.getElementById("check-solution-btn").addEventListener("click", checkSolution)
+        document.getElementById("clear-btn").addEventListener("click", clearBoard)
+        document.getElementById("reset-btn").addEventListener("click", resetBoard)
+
+      document.getElementById("difficulty-slider").addEventListener("input", (e) => {
+          document.getElementById("difficulty-value").textContent =
+            e.target.value;
+        })
+
+      // Add tab navigation between cells
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const inputs = Array.from(document.querySelectorAll('.sudoku-cell:not(.provided)'));
+            const index = inputs.indexOf(document.activeElement);
+            const next = inputs[(index + 1) % inputs.length];
+            next?.focus();
+        }
+      })
+
+      // Initial load
+      fetchNewPuzzle(0.5)
+    </script>
+  </body>
+</html>
